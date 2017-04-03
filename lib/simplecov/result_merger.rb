@@ -17,17 +17,20 @@ module SimpleCov
         File.join(SimpleCov.coverage_path, ".resultset.json.lock")
       end
 
-      # Loads the cached resultset from JSON and returns it as a Hash
-      def resultset
-        if stored_data
-          begin
-            JSON.parse(stored_data)
-          rescue
-            {}
-          end
-        else
-          {}
-        end
+      # Loads the cached resultset from JSON and returns it as a Hash,
+      # caching it for subsequent accesses.
+      def resultset(force_reload = false)
+        @resultset = nil if force_reload
+
+        @resultset ||= if (data = stored_data)
+                         begin
+                           JSON.parse(data) || {}
+                         rescue
+                           {}
+                         end
+                       else
+                         {}
+                       end
       end
 
       # Returns the contents of the resultset cache as a string or if the file is missing or empty nil
@@ -78,7 +81,7 @@ module SimpleCov
       def store_result(result)
         File.open(resultset_writelock, "w+") do |f|
           f.flock(File::LOCK_EX)
-          new_set = resultset
+          new_set = resultset(true)
           command_name, data = result.to_hash.first
           new_set[command_name] = data
           File.open(resultset_path, "w+") do |f_|

@@ -4,7 +4,6 @@ if SimpleCov.usable?
   describe SimpleCov::ResultMerger do
     describe "with two faked coverage resultsets" do
       before do
-        SimpleCov.use_merging true
         @resultset1 = {
           source_fixture("sample.rb") => [nil, 1, 1, 1, nil, nil, 1, 1, nil, nil],
           source_fixture("app/models/user.rb") => [nil, 1, 1, 1, nil, nil, 1, 0, nil, nil],
@@ -73,14 +72,23 @@ if SimpleCov.usable?
               expect(SimpleCov::ResultMerger.results.length).to eq(1)
             end
           end
+        end
+      end
 
-          context "with merging disabled" do
-            before { SimpleCov.use_merging false }
+      describe ".store_result" do
+        it "refreshes the resultset" do
+          set = SimpleCov::ResultMerger.resultset
+          SimpleCov::ResultMerger.store_result({})
+          new_set = SimpleCov::ResultMerger.resultset
+          expect(new_set).not_to equal(set)
+        end
+      end
 
-            it "returns nil for SimpleCov.result" do
-              expect(SimpleCov.result).to be_nil
-            end
-          end
+      describe ".resultset" do
+        it "caches by default" do
+          set = SimpleCov::ResultMerger.resultset
+          new_set = SimpleCov::ResultMerger.resultset
+          expect(new_set).to equal(set)
         end
       end
     end
